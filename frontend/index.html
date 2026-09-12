@@ -4,7 +4,36 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>Predictive Maintenance AI Agent</title>
+    <script>
+      // Production hotfix: the current React bundle uses a localhost API URL.
+      // Keep localhost behavior for development, but route Vercel requests to Render.
+      (() => {
+        const productionApi = "https://cognizant-predictive-maintenance-agent.onrender.com";
+        const isVercel = window.location.hostname.endsWith("vercel.app");
+        const originalFetch = window.fetch.bind(window);
+
+        if (!isVercel) return;
+
+        window.fetch = (input, init) => {
+          const rawUrl = input instanceof Request ? input.url : String(input);
+          const rewrittenUrl = rawUrl.replace(
+            /^http:\/\/(127\.0\.0\.1|localhost):8000/,
+            productionApi
+          );
+
+          if (rewrittenUrl === rawUrl) {
+            return originalFetch(input, init);
+          }
+
+          if (input instanceof Request) {
+            return originalFetch(new Request(rewrittenUrl, input), init);
+          }
+
+          return originalFetch(rewrittenUrl, init);
+        };
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
