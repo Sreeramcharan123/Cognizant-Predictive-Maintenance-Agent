@@ -1,0 +1,4 @@
+Replace frontend/src/App.jsx with App.jsx from this folder.
+Keep App.css from this patch (or your existing App.css if it already contains the login styles).
+Then run: npm run dev
+Backend must expose /api/auth/login, /api/auth/me and /api/auth/logout.
