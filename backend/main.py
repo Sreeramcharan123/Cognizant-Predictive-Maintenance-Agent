@@ -55,20 +55,24 @@ app = FastAPI(
 # CORS CONFIGURATION
 # ============================================================
 
+frontend_url = os.getenv(
+    "FRONTEND_URL",
+    "https://cognizant-predictive-maintenance-ag.vercel.app"
+).rstrip("/")
+
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    frontend_url,
+]
+
 app.add_middleware(
     CORSMiddleware,
-
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:5174",
-        "http://127.0.0.1:5174",
-    ],
-
+    allow_origins=allowed_origins,
     allow_credentials=True,
-
     allow_methods=["*"],
-
     allow_headers=["*"],
 )
 
@@ -107,14 +111,19 @@ app.include_router(
 app.include_router(
     recommendations_router
 )
+
 app.include_router(
     auth_router
 )
+
+
+# ============================================================
 # HEALTH CHECK
+# ============================================================
+
 @app.get("/")
 def root():
     return {
         "message": "Predictive Maintenance AI Agent is running",
         "status": "healthy"
     }
-    
