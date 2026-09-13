@@ -546,11 +546,17 @@ function languageAwareMessage(value) {
 const originalTextNodes = new WeakMap();
 const originalAttributes = new WeakMap();
 let translatingUi = false;
+let LAST_APPLIED_LANGUAGE = "English";
 
 function applyUiLanguage() {
   if (typeof document === "undefined") return;
 
   translatingUi = true;
+
+  // Important: keep the original English text when switching languages.
+  // Without this guard, Kannada/Hindi text could be stored as the new
+  // "original", making it impossible to switch back to English.
+  const languageChanged = LAST_APPLIED_LANGUAGE !== ACTIVE_LANGUAGE;
 
   const root = document.body;
   const walker = document.createTreeWalker(
@@ -576,7 +582,11 @@ function applyUiLanguage() {
     const normalizedCurrent = normalizeUiText(current);
     const savedOriginal = originalTextNodes.get(node);
 
-    if (!savedOriginal || normalizeUiText(translateUi(savedOriginal)) !== normalizedCurrent) {
+    // Capture a new DOM node's current English text once.
+    // During a language switch, never replace the saved English original
+    // with the currently displayed Kannada/Hindi translation.
+    if (!savedOriginal || (!languageChanged &&
+        normalizeUiText(translateUi(savedOriginal)) !== normalizedCurrent)) {
       originalTextNodes.set(node, normalizedCurrent);
     }
 
@@ -589,10 +599,13 @@ function applyUiLanguage() {
   elements.forEach((element) => {
     ["placeholder", "title", "aria-label"].forEach((attribute) => {
       if (!element.hasAttribute(attribute)) return;
+
       const current = element.getAttribute(attribute);
       const saved = originalAttributes.get(element)?.[attribute];
 
-      if (!saved || normalizeUiText(translateUi(saved)) !== normalizeUiText(current)) {
+      // Same protection for placeholders/titles/ARIA labels.
+      if (!saved || (!languageChanged &&
+          normalizeUiText(translateUi(saved)) !== normalizeUiText(current))) {
         const record = originalAttributes.get(element) || {};
         record[attribute] = current;
         originalAttributes.set(element, record);
@@ -604,6 +617,7 @@ function applyUiLanguage() {
     });
   });
 
+  LAST_APPLIED_LANGUAGE = ACTIVE_LANGUAGE;
   translatingUi = false;
 }
 
