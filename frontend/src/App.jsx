@@ -207,7 +207,7 @@ const UI_TRANSLATIONS = {
     "Most recent analysis from the active dashboard session": "ಸಕ್ರಿಯ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್ ಸೆಷನ್‌ನ ಇತ್ತೀಚಿನ ವಿಶ್ಲೇಷಣೆ",
     "Human review required": "ಮಾನವ ಪರಿಶೀಲನೆ ಅಗತ್ಯ",
     "Alert History": "ಎಚ್ಚರಿಕೆ ಇತಿಹಾಸ",
-    "High/critical predictions and anomaly events retrieved from SQLite": "SQLite ನಿಂದ ಪಡೆದ High/Critical ಮುನ್ಸೂಚನೆಗಳು ಮತ್ತು ಅಸಾಮಾನ್ಯ ಘಟನೆಗಳು",
+    "High/critical predictions and anomaly events retrieved from the backend database": "ಬ್ಯಾಕೆಂಡ್ ಡೇಟಾಬೇಸ್‌ನಿಂದ ಪಡೆದ High/Critical ಮುನ್ಸೂಚನೆಗಳು ಮತ್ತು ಅಸಾಮಾನ್ಯ ಘಟನೆಗಳು",
     "Decision Rules": "ನಿರ್ಧಾರ ನಿಯಮಗಳು",
     "Prototype thresholds used by the hackathon system": "ಹ್ಯಾಕಥಾನ್ ಸಿಸ್ಟಮ್ ಬಳಸುವ ಪ್ರೋಟೋಟೈಪ್ ಮಿತಿಗಳು",
     "LOW": "ಕಡಿಮೆ",
@@ -434,7 +434,7 @@ const UI_TRANSLATIONS = {
     "Most recent analysis from the active dashboard session": "सक्रिय डैशबोर्ड सेशन का नवीनतम विश्लेषण",
     "Human review required": "मानव समीक्षा आवश्यक",
     "Alert History": "अलर्ट इतिहास",
-    "High/critical predictions and anomaly events retrieved from SQLite": "SQLite से प्राप्त High/Critical पूर्वानुमान और असामान्यता घटनाएँ",
+    "High/critical predictions and anomaly events retrieved from the backend database": "बैकएंड डेटाबेस से प्राप्त High/Critical पूर्वानुमान और असामान्यता घटनाएँ",
     "Decision Rules": "निर्णय नियम",
     "Prototype thresholds used by the hackathon system": "हैकथॉन सिस्टम द्वारा उपयोग की गई प्रोटोटाइप सीमाएँ",
     "LOW": "कम",
@@ -668,6 +668,9 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
+  const [language, setLanguage] = useState(
+    () => localStorage.getItem(LANGUAGE_STORAGE_KEY) || "English"
+  );
   const [machine, setMachine] = useState(defaultMachine);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -675,9 +678,6 @@ function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedMachineId, setSelectedMachineId] = useState("MACHINE-001");
   const [machineCount, setMachineCount] = useState(0);
-  const [language, setLanguage] = useState(
-    () => localStorage.getItem(LANGUAGE_STORAGE_KEY) || "English"
-  );
 
   useEffect(() => {
     ACTIVE_LANGUAGE = language;
@@ -728,6 +728,8 @@ function App() {
   if (!isAuthenticated) {
     return (
       <LoginPage
+        language={language}
+        setLanguage={setLanguage}
         onLogin={(user) => {
           setCurrentUser(user);
           setIsAuthenticated(true);
@@ -735,6 +737,13 @@ function App() {
       />
     );
   }
+
+  const handleLanguageChange = (nextLanguage) => {
+    setLanguage(nextLanguage);
+    ACTIVE_LANGUAGE = nextLanguage;
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    applyUiLanguage();
+  };
 
   const refreshMachineCount = async () => {
     try {
@@ -847,13 +856,7 @@ function App() {
             <Globe2 size={14} />
             <select
               value={language}
-              onChange={(e) => {
-                const nextLanguage = e.target.value;
-                setLanguage(nextLanguage);
-                ACTIVE_LANGUAGE = nextLanguage;
-                localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
-                applyUiLanguage();
-              }}
+              onChange={(e) => handleLanguageChange(e.target.value)}
               aria-label="Website language"
             >
               <option>English</option>
@@ -1318,13 +1321,10 @@ function App() {
 }
 
 
-function LoginPage({ onLogin }) {
+function LoginPage({ onLogin, language, setLanguage }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [language, setLanguage] = useState(
-    () => localStorage.getItem(LANGUAGE_STORAGE_KEY) || "English"
-  );
   const [remember, setRemember] = useState(true);
   const [loginError, setLoginError] = useState("");
 
@@ -2710,7 +2710,7 @@ function AlertsPage({ result, riskLevel, probability, anomaly, navigate }) {
         <div className="panel-header">
           <div>
             <h2><Database size={19} /> Alert History</h2>
-            <p>High/critical predictions and anomaly events retrieved from SQLite</p>
+            <p>High/critical predictions and anomaly events retrieved from the backend database</p>
           </div>
           <span className="machine-badge">{alerts.length} EVENTS</span>
         </div>
